@@ -29,6 +29,8 @@
       <button onclick="appendToDisplay('.')">.</button>
       <button onclick="calculate()">=</button>
       <button onclick="appendToDisplay('/')">/</button>
+      <button onclick="appendToDisplay('/')">/</button>
+      <button onclick="appendToDisplay('/')">/</button>
     </div>
   </div>
   <script src="script.js"></script>
@@ -56,6 +58,7 @@
 button {
   padding: 10px;
   font-size: 20px;
+  color :yellow;
 }
 function clearDisplay() {
   document.getElementById('display').value = '';
@@ -69,3 +72,4 @@ function calculate() {
   var result = eval(document.getElementById('display').value);
   document.getElementById('display').value = result;
 }
+
