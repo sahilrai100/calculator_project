@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Complete Web Calculator</title>
+  <style>
+    :root{
+      --bg:#0f1724; --panel:#111827; --accent:#06b6d4; --muted:#9ca3af; --btn:#111827; --glass: rgba(255,255,255,0.03);
+      --light-bg:#f7fafc; --light-panel:#ffffff; --light-text:#0b1220;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,var(--bg) 0%, #071026 100%); color: #e6eef6;display:flex;align-items:center;justify-content:center;padding:24px;
+    }
+    .calculator{
+      width:360px; max-width:96vw; border-radius:16px; background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6); overflow:hidden; display:grid; grid-template-columns: 1fr 110px;
+    }
+    .left{padding:18px}
+    .screen{
+      background:var(--glass); border-radius:12px;padding:12px;min-height:96px; display:flex;flex-direction:column; justify-content:center; gap:6px;
+    }
+    .small-display{font-size:14px;color:var(--muted);min-height:18px;word-break:break-all}
+    .main-display{font-size:28px;font-weight:600;word-break:break-all}
+    .buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+    button.key{padding:16px;border-radius:10px;border:0;background:rgba(255,255,255,0.03);color:inherit;font-size:16px;cursor:pointer}
+    button.key.operator{background:linear-gradient(180deg, rgba(6,182,212,0.12), rgba(6,182,212,0.06)); color:var(--accent)}
+    button.key.equal{grid-column:span 2;background:var(--accent);color:#042027;font-weight:700}
+    .right{border-left:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;min-width:110px}
+    .history{max-height:320px; overflow:auto}
+    .hist-item{padding:8px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.02);font-size:13px}
+    .footer{display:flex;gap:8px;margin-top:12px;align-items:center}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .title{font-weight:700}
+    .controls{display:flex;gap:8px}
+    .theme-toggle{padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);cursor:pointer}
+    /* responsive */
+    @media (max-width:520px){
+      .calculator{grid-template-columns:1fr;}
+      .right{border-left:0;border-top:1px solid rgba(255,255,255,0.03);min-width:auto}
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Calculator">
+    <div class="left">
+      <div class="top-row">
+        <div class="title">Calculator</div>
+        <div class="controls">
+          <button id="copy" class="theme-toggle" title="Copy result">Copy</button>
+          <button id="clear-history" class="theme-toggle" title="Clear history">Clear</button>
+        </div>
+      </div>
+
+      <div class="screen" id="screen">
+        <div class="small-display" id="expression" aria-live="polite"></div>
+        <div class="main-display" id="result" aria-live="polite">0</div>
+      </div>
+
+      <div class="buttons" aria-hidden="false">
+        <button class="key" data-val="MC">MC</button>
+        <button class="key" data-val="MR">MR</button>
+        <button class="key" data-val="M+">M+</button>
+        <button class="key operator" data-val="/">÷</button>
+
+        <button class="key" data-val="7">7</button>
+        <button class="key" data-val="8">8</button>
+        <button class="key" data-val="9">9</button>
+        <button class="key operator" data-val="*">×</button>
+
+        <button class="key" data-val="4">4</button>
+        <button class="key" data-val="5">5</button>
+        <button class="key" data-val="6">6</button>
+        <button class="key operator" data-val="-">−</button>
+
+        <button class="key" data-val="1">1</button>
+        <button class="key" data-val="2">2</button>
+        <button class="key" data-val="3">3</button>
+        <button class="key operator" data-val="+">+</button>
+
+        <button class="key" data-val="0">0</button>
+        <button class="key" data-val=".">.</button>
+        <button class="key" id="paren" data-val="()">()</button>
+        <button class="key equal" id="equals" data-val="=">=</button>
+
+        <button class="key" data-val="sqrt">√</button>
+        <button class="key" data-val="pow">^</button>
+        <button class="key" data-val="%">%</button>
+        <button class="key" id="back" data-val="back">⌫</button>
+
+        <button class="key" id="ans" data-val="ans">ANS</button>
+        <button class="key" id="clear" data-val="C">C</button>
+        <button class="key" data-val="pi">π</button>
+        <button class="key" data-val="e">e</button>
+      </div>
+    </div>
+
+    <div class="right" aria-label="History and memory">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>History</strong>
+        <small id="hist-count">0</small>
+      </div>
+      <div class="history" id="history" tabindex="0" aria-live="polite"></div>
+
+      <div class="footer">
+        <button id="toggle-theme" class="btn-ghost">Toggle Theme</button>
+        <button id="download" class="btn-ghost">Download</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const exprEl = document.getElementById('expression');
+      const resEl = document.getElementById('result');
+      const historyEl = document.getElementById('history');
+      const histCount = document.getElementById('hist-count');
+
+      let expression = '';
+      let lastAnswer = null;
+      let history = [];
+      let memory = 0;
+      let parenToggle = false;
+
+      function render(){
+        exprEl.textContent = expression || '';
+        resEl.textContent = expression ? tryEvalPreview(expression) : (lastAnswer === null ? '0' : String(lastAnswer));
+        renderHistory();
+      }
+
+      function renderHistory(){
+        historyEl.innerHTML = '';
+        history.slice().reverse().forEach((it, idx)=>{
+          const div = document.createElement('div'); div.className='hist-item'; div.tabIndex=0;
+          div.textContent = it.input + ' = ' + it.output;
+          div.addEventListener('click', ()=>{ expression = it.input; render(); });
+          historyEl.appendChild(div);
+        });
+        histCount.textContent = history.length;
+      }
+
+      function safeEval(input){
+        // allow digits, operators, parentheses, decimal, letters for functions we map (sqrt,pow,pi,e,ANS)
+        const allowed = /^[0-9+\-*/().% ^eπANSsqrtpow, ]+$/i;
+        // Prepare replacements
+        let cleaned = input.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\^/g,'**');
+        cleaned = cleaned.replace(/π/g, String(Math.PI));
+        cleaned = cleaned.replace(/\be\b/g, String(Math.E));
+        cleaned = cleaned.replace(/ANS/g, lastAnswer === null ? '0' : String(lastAnswer));
+        // sqrt(x) -> Math.sqrt(x) ; pow(a,b) -> Math.pow(a,b)
+        cleaned = cleaned.replace(/sqrt\s*\(/gi, 'Math.sqrt(');
+        cleaned = cleaned.replace(/pow\s*\(/gi, 'Math.pow(');
+
+        // percent handling: convert 'number%' to '(number/100)'
+        cleaned = cleaned.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+
+        // disallow suspicious characters
+        if(!allowed.test(cleaned)) throw new Error('Invalid characters');
+        // final eval - use Function rather than eval
+        try{
+          // eslint-disable-next-line no-new-func
+          const fn = new Function('return ('+cleaned+')');
+          const val = fn();
+          if(typeof val === 'number' && isFinite(val)) return val;
+          throw new Error('Non-numeric result');
+        }catch(e){ throw e }
+      }
+
+      function tryEvalPreview(input){
+        try{ const v = safeEval(input); return String(v); }catch(e){ return '' }
+      }
+
+      function press(val){
+        if(val === 'C'){ expression=''; render(); return }
+        if(val === 'back'){ expression = expression.slice(0,-1); render(); return }
+        if(val === '()'){ expression += parenToggle ? ')' : '('; parenToggle = !parenToggle; render(); return }
+        if(val === '='){ try{ const out = safeEval(expression); lastAnswer = out; history.push({input:expression, output:String(out)}); expression = String(out); render(); }catch(e){ resEl.textContent = 'Error'; }
+          return }
+        if(val === 'ANS'){ expression += (lastAnswer === null ? '0' : String(lastAnswer)); render(); return }
+        if(val === 'pi'){ expression += 'π'; render(); return }
+        if(val === 'e'){ expression += 'e'; render(); return }
+        if(val === 'sqrt'){ expression += 'sqrt('; render(); return }
+        if(val === 'pow'){ expression += 'pow('; render(); return }
+        if(val === 'MC'){ memory = 0; return }
+        if(val === 'MR'){ expression += String(memory); render(); return }
+        if(val === 'M+'){ try{ const v = safeEval(expression); memory += Number(v); }catch(e){}; return }
+
+        // normal input
+        expression += val; render();
+      }
+
+      document.querySelectorAll('button.key').forEach(btn=>{
+        btn.addEventListener('click', ()=>{ press(btn.dataset.val); btn.blur(); });
+      });
+
+      document.getElementById('equals').addEventListener('click', ()=>{ press('='); });
+      document.getElementById('clear').addEventListener('click', ()=>{ press('C'); });
+      document.getElementById('back').addEventListener('click', ()=>{ press('back'); });
+
+      document.getElementById('copy').addEventListener('click', ()=>{
+        const text = resEl.textContent || '';
+        navigator.clipboard?.writeText(text).then(()=>{ alert('Copied: '+text) }).catch(()=>{ alert('Copy failed') });
+      });
+
+      document.getElementById('clear-history').addEventListener('click', ()=>{ history = []; renderHistory(); });
+
+      document.getElementById('toggle-theme').addEventListener('click', ()=>{
+        if(document.body.style.background.includes('linear-gradient')){
+          document.body.style.background = 'linear-gradient(180deg,var(--light-bg) 0%, #eef2f7 100%)';
+          document.documentElement.style.setProperty('--muted','#6b7280'); document.documentElement.style.setProperty('--accent','#0ea5a4'); document.body.style.color = 'var(--light-text)';
+        } else {
+          document.body.style.background = 'linear-gradient(180deg,var(--bg) 0%, #071026 100%)'; document.body.style.color='';
+        }
+      });
+
+      // Download HTML (this file) — generate blob from current DOM outerHTML
+      document.getElementById('download').addEventListener('click', ()=>{
+        const html = '<!doctype html>\n'+document.documentElement.outerHTML;
+        const blob = new Blob([html], {type:'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'calculator.html'; a.click(); URL.revokeObjectURL(a.href);
+      });
+
+      // Keyboard support
+      window.addEventListener('keydown',(e)=>{
+        const key = e.key;
+        if((/^[0-9]$/).test(key)) { press(key); e.preventDefault(); return }
+        if(key === '.') { press('.'); e.preventDefault(); return }
+        if(key === 'Enter' || key === '='){ press('='); e.preventDefault(); return }
+        if(key === 'Backspace'){ press('back'); e.preventDefault(); return }
+        if(key === 'Escape'){ press('C'); e.preventDefault(); return }
+        if(key === '+'||key==='-'||key==='*'||key==='/'||key==='^'){ press(key === '^' ? 'pow' : key); e.preventDefault(); return }
+        if(key === '%'){ press('%'); e.preventDefault(); return }
+        if(key === '('||key===')'){ press(key); e.preventDefault(); return }
+      });
+
+      // initial render
+      render();
+
+    })();
+  </script>
+</body>
+</html>
